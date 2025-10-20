@@ -1,0 +1,62 @@
+<script type="text/javascript" id="node-tcp-escpos">
+	RED.nodes.registerType('tcp escpos', {
+		category: 'network',
+		color: '#a9a9a9',
+		inputs: 1,
+		inputLabels: 'instructions',
+		icon: 'node.svg',
+		align: 'right',
+		defaults: {
+			name: { value: '' },
+			host: { value: '' },
+			type: { value: 'text' },
+			payload: { value: "I'm Mr. Printer.\nLook at me!" },
+		},
+		label: function () {
+			return this.name || 'tcp escpos'
+		},
+	})
+</script>
+<script type="text/html" data-template-name="tcp escpos">
+	<div class="form-row">
+		<label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+		<input type="text" id="node-input-name" placeholder="Name" />
+	</div>
+	<div class="form-row">
+		<label for="node-input-host"><i class="fa fa-dot-circle-o"></i> Host</label>
+		<input type="text" id="node-input-host" placeholder="192.168.1.101:9100" />
+	</div>
+	<div class="form-row">
+		<label for="node-input-type"><i class="fa fa-play-circle"></i> Type</label>
+		<select id="node-input-type">
+			<option value="text">Text</option>
+			<option value="image">Image</option>
+			<option value="buffer">Buffer</option>
+		</select>
+	</div>
+	<div class="form-row">
+		<label for="node-input-payload"
+			><i class="fa fa-dot-circle-o"></i> Payload</label
+		>
+		<textarea id="node-input-payload"></textarea>
+	</div>
+</script>
+<script type="text/html" data-help-name="tcp escpos">
+	<p>Typescript example Node-RED node</p>
+	<h3>Inputs</h3>
+	<dl class="message-properties">
+		<dt>
+			payload
+			<span class="property-type">boolean</span>
+		</dt>
+		<h3>Outputs</h3>
+		<dl class="message-properties">
+			<dt>
+				payload
+				<span class="property-type">object</span>
+			</dt>
+			<h3>Details</h3>
+			<p>Some more information about the node.</p>
+		</dl>
+	</dl>
+</script>

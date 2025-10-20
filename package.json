@@ -1,0 +1,41 @@
+{
+	"name": "node-red-contrib-tcp-escpos",
+	"version": "0.0.0",
+	"description": "Escpos over TCP/IP node for Node-RED",
+	"devDependencies": {
+		"@types/node": "^18.14.0",
+		"@types/node-red": "^1.2.1",
+		"typescript": "^4.9.5"
+	},
+	"scripts": {
+		"build": "tsc",
+		"prepare": "npm run build",
+		"dev": "tsc --watch",
+		"start": "npm run dev"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/FilipChalupa/node-red-contrib-tcp-escpos.git"
+	},
+	"keywords": [
+		"node-red",
+		"typescript",
+		"tcp",
+		"escpos",
+		"printer"
+	],
+	"author": "Filip Chalupa",
+	"license": "ISC",
+	"files": [
+		"nodes"
+	],
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"node-red": {
+		"version": ">=4.0.0",
+		"nodes": {
+			"node": "nodes/node.js"
+		}
+	}
+}
