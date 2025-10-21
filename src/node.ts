@@ -1,3 +1,4 @@
+import iconv from 'iconv-lite'
 import * as NodeRED from 'node-red'
 import net from 'node:net'
 import { URL } from 'node:url'
@@ -9,12 +10,18 @@ const connectTcp = (options: net.NetConnectOpts) =>
 		socket.once('error', (error) => reject(error))
 	})
 
-const allowedTypes = ['text', 'image', 'buffer'] as const
-type Type = (typeof allowedTypes)[number]
+const encodeText = (text: string): Buffer => {
+	// Remove all characters that are not letters, numbers, punctuation or whitespace printers cannot handle emojis
+	const filtered = text.replaceAll(/[^\p{L}\p{N}\p{P}\p{Z}\n\r×]+/gu, '')
+	return iconv.encode(filtered, 'CP852')
+}
+
+const allowedPayloadTypes = ['text', 'image', 'buffer'] as const
+type PayloadType = (typeof allowedPayloadTypes)[number]
 
 interface TcpEscposNodeConfiguration extends NodeRED.NodeDef {
 	host: string
-	type: Type
+	payloadType: PayloadType
 	payload: string | Array<number>
 }
 
@@ -33,23 +40,31 @@ export = function (RED: NodeRED.NodeAPI) {
 			const error = await (async () => {
 				try {
 					const payload = (() => {
-						const type =
-							allowedTypes.find((type) => type === message.type) ||
-							configuration.type
+						const payloadType =
+							allowedPayloadTypes.find(
+								(type) => type === message.payloadType,
+							) || configuration.payloadType
 						const payload = message.payload || configuration.payload
-						if (type === 'text') {
-							throw new Error('Text type not implemented yet')
+						if (payloadType === 'text') {
+							const commands: Array<Buffer> = []
+							commands.push(Buffer.from([0x1b, 0x40])) // Initialize printer
+							commands.push(Buffer.from([0x1b, 0x74, 18])) // Language options: 18 is CP852 code table
+							commands.push(Buffer.from([0x1b, 0x61, 1])) // Center alignment
+							commands.push(encodeText(payload))
+							commands.push(Buffer.from([0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a])) // New lines
+							commands.push(Buffer.from([0x1b, 0x69])) // Cut
+							return Buffer.concat(commands)
 						}
-						if (type === 'image') {
+						if (payloadType === 'image') {
 							throw new Error('Image type not implemented yet')
 						}
-						if (type === 'buffer') {
+						if (payloadType === 'buffer') {
 							if (Array.isArray(payload)) {
 								return Buffer.from(payload)
 							}
 							return Buffer.from(payload, 'base64')
 						}
-						return type satisfies never
+						return payloadType satisfies never
 					})()
 					this.status({ fill: 'yellow', shape: 'dot', text: 'connecting…' })
 					const hostname: string = message.host || configuration.host

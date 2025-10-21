@@ -9,7 +9,7 @@
 		defaults: {
 			name: { value: '' },
 			host: { value: '' },
-			type: { value: 'text' },
+			payloadType: { value: 'text' },
 			payload: { value: "I'm Mr. Printer.\nLook at me!" },
 		},
 		label: function () {
@@ -27,8 +27,10 @@
 		<input type="text" id="node-input-host" placeholder="192.168.1.101:9100" />
 	</div>
 	<div class="form-row">
-		<label for="node-input-type"><i class="fa fa-play-circle"></i> Type</label>
-		<select id="node-input-type">
+		<label for="node-input-payloadType"
+			><i class="fa fa-play-circle"></i> Type</label
+		>
+		<select id="node-input-payloadType">
 			<option value="text">Text</option>
 			<option value="image">Image</option>
 			<option value="buffer">Buffer</option>

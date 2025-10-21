@@ -37,5 +37,8 @@
 		"nodes": {
 			"node": "nodes/node.js"
 		}
+	},
+	"dependencies": {
+		"iconv-lite": "^0.7.0"
 	}
 }
