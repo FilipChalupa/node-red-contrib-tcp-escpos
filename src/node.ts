@@ -41,18 +41,18 @@ export = function (RED: NodeRED.NodeAPI) {
 				try {
 					const payload = (() => {
 						const payloadType =
-							allowedPayloadTypes.find(
-								(type) => type === message.payloadType,
-							) || configuration.payloadType
+							allowedPayloadTypes.find((type) => type === message.type) ||
+							configuration.payloadType
 						const payload = message.payload || configuration.payload
 						if (payloadType === 'text') {
 							const commands: Array<Buffer> = []
 							commands.push(Buffer.from([0x1b, 0x40])) // Initialize printer
 							commands.push(Buffer.from([0x1b, 0x74, 18])) // Language options: 18 is CP852 code table
 							commands.push(Buffer.from([0x1b, 0x61, 1])) // Center alignment
-							commands.push(encodeText(payload))
+							commands.push(encodeText(String(payload)))
 							commands.push(Buffer.from([0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a])) // New lines
 							commands.push(Buffer.from([0x1b, 0x69])) // Cut
+
 							return Buffer.concat(commands)
 						}
 						if (payloadType === 'image') {
