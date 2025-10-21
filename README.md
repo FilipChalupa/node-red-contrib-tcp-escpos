@@ -2,7 +2,7 @@
 
 ![Epson printer example](./docs/exampleHardware.jpg)
 
-### Example usage ([JSON export](./examples/ledSemaphore.json))
+### Example usage ([JSON export](./examples/inject.json))
 
 ![Example nodes composition](./docs/exampleNode.png)
 
