@@ -1,0 +1,148 @@
+[
+	{
+		"id": "4d41536076f146a3",
+		"type": "inject",
+		"z": "32cf377cee445c17",
+		"name": "Text",
+		"props": [
+			{
+				"p": "payload"
+			},
+			{
+				"p": "topic",
+				"vt": "str"
+			}
+		],
+		"repeat": "",
+		"crontab": "",
+		"once": false,
+		"onceDelay": 0.1,
+		"topic": "",
+		"payload": "I'm on fire!",
+		"payloadType": "str",
+		"x": 150,
+		"y": 620,
+		"wires": [["3afae7de522ba5d0"]]
+	},
+	{
+		"id": "0430bc37286b340e",
+		"type": "inject",
+		"z": "32cf377cee445c17",
+		"name": "Buffer",
+		"props": [
+			{
+				"p": "payload"
+			},
+			{
+				"p": "type",
+				"v": "buffer",
+				"vt": "str"
+			}
+		],
+		"repeat": "",
+		"crontab": "",
+		"once": false,
+		"onceDelay": 0.1,
+		"topic": "",
+		"payload": "[27,64,27,116,18,27,97,1,72,101,108,108,111,32,87,111,114,108,100,33,10,10,10,10,10,10,27,105]",
+		"payloadType": "bin",
+		"x": 150,
+		"y": 680,
+		"wires": [["3afae7de522ba5d0"]]
+	},
+	{
+		"id": "2310fee8203253dc",
+		"type": "inject",
+		"z": "32cf377cee445c17",
+		"name": "Image",
+		"props": [
+			{
+				"p": "payload"
+			},
+			{
+				"p": "type",
+				"v": "image",
+				"vt": "str"
+			}
+		],
+		"repeat": "",
+		"crontab": "",
+		"once": false,
+		"onceDelay": 0.1,
+		"topic": "",
+		"payload": "https://placekittens.com/200/300",
+		"payloadType": "str",
+		"x": 150,
+		"y": 800,
+		"wires": [["3afae7de522ba5d0"]]
+	},
+	{
+		"id": "b8bebd024f1c6707",
+		"type": "tcp escpos",
+		"z": "32cf377cee445c17",
+		"name": "",
+		"host": "10.10.151.212",
+		"payloadType": "text",
+		"payload": "I'm Mr. Printer.\nLook at me!",
+		"x": 490,
+		"y": 660,
+		"wires": []
+	},
+	{
+		"id": "871ef29dfdade797",
+		"type": "inject",
+		"z": "32cf377cee445c17",
+		"name": "No data",
+		"props": [],
+		"repeat": "",
+		"crontab": "",
+		"once": false,
+		"onceDelay": 0.1,
+		"topic": "",
+		"x": 150,
+		"y": 560,
+		"wires": [["3afae7de522ba5d0"]]
+	},
+	{
+		"id": "78ac4b07837c45b6",
+		"type": "inject",
+		"z": "32cf377cee445c17",
+		"name": "Buffer base64",
+		"props": [
+			{
+				"p": "payload"
+			},
+			{
+				"p": "type",
+				"v": "buffer",
+				"vt": "str"
+			}
+		],
+		"repeat": "",
+		"crontab": "",
+		"once": false,
+		"onceDelay": 0.1,
+		"topic": "",
+		"payload": "G0AbdBIbYQFJJ20gb24gZmlyZSEKCgoKCgobaQ==",
+		"payloadType": "str",
+		"x": 170,
+		"y": 740,
+		"wires": [["3afae7de522ba5d0"]]
+	},
+	{
+		"id": "3afae7de522ba5d0",
+		"type": "junction",
+		"z": "32cf377cee445c17",
+		"x": 400,
+		"y": 660,
+		"wires": [["b8bebd024f1c6707"]]
+	},
+	{
+		"id": "e7996e76cf499cea",
+		"type": "global-config",
+		"env": [],
+		"modules": {
+			"node-red-contrib-tcp-escpos": "0.0.1"
+		}
+	}
+]
