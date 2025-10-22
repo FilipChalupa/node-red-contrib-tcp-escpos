@@ -13,7 +13,7 @@
 			payload: { value: "I'm Mr. Printer.\nLook at me!" },
 		},
 		label: function () {
-			return this.name || 'tcp escpos'
+			return this.name || this.host || 'tcp escpos'
 		},
 	})
 </script>
