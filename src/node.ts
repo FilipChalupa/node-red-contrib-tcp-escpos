@@ -1,5 +1,6 @@
 import iconv from 'iconv-lite'
 import * as NodeRED from 'node-red'
+import fs from 'node:fs/promises'
 import net from 'node:net'
 import { URL } from 'node:url'
 
@@ -40,12 +41,12 @@ export = function (RED: NodeRED.NodeAPI) {
 		this.on('input', async (message: any, _send, done) => {
 			const error = await (async () => {
 				try {
-					const payload = (() => {
+					const cutAfter = message.cutAfter ?? configuration.cutAfter
+					const payload = await (async () => {
 						const payloadType =
 							allowedPayloadTypes.find((type) => type === message.type) ||
 							configuration.payloadType
 						const payload = message.payload || configuration.payload
-						const cutAfter = message.cutAfter ?? configuration.cutAfter
 						if (payloadType === 'text') {
 							const commands: Array<Buffer> = []
 							commands.push(Buffer.from([0x1b, 0x40])) // Initialize printer
@@ -53,17 +54,53 @@ export = function (RED: NodeRED.NodeAPI) {
 							commands.push(Buffer.from([0x1b, 0x61, 1])) // Center alignment
 							commands.push(encodeText(String(payload)))
 							commands.push(Buffer.from([0x0a])) // New line
-							if (cutAfter) {
-								commands.push(Buffer.from([0x0a, 0x0a, 0x0a, 0x0a, 0x0a])) // New lines
-								commands.push(Buffer.from([0x1b, 0x69])) // Cut
-							}
-
 							return Buffer.concat(commands)
 						}
 						if (payloadType === 'image') {
-							throw new Error('Image type not implemented yet')
+							const imageBuffer = await (async () => {
+								if (Buffer.isBuffer(payload)) {
+									return payload
+								}
+								if (typeof payload === 'string') {
+									if (payload.startsWith('data:image/')) {
+										const base64 = payload.split(',', 2)[1]
+										return Buffer.from(base64, 'base64')
+									}
+									try {
+										const url = new URL(payload)
+										if (
+											url.protocol === 'http:' ||
+											url.protocol === 'https:' ||
+											url.protocol === 'file:'
+										) {
+											const response = await fetch(url.toString())
+											return Buffer.from(await response.arrayBuffer())
+										}
+									} catch {}
+									const base64Pattern = /^[A-Za-z0-9+/]+={0,2}$/
+									if (payload.length % 4 === 0 && base64Pattern.test(payload)) {
+										return Buffer.from(payload, 'base64')
+									}
+									const isFilePath = await (async () => {
+										try {
+											await fs.access(payload)
+											return true
+										} catch {}
+										return false
+									})()
+									if (isFilePath) {
+										return fs.readFile(payload)
+									}
+								}
+								throw new Error('Invalid image payload.')
+							})()
+							// @TODO
+							throw new Error()
 						}
 						if (payloadType === 'buffer') {
+							if (Buffer.isBuffer(payload)) {
+								return payload
+							}
 							if (Array.isArray(payload)) {
 								return Buffer.from(payload)
 							}
@@ -84,7 +121,16 @@ export = function (RED: NodeRED.NodeAPI) {
 
 					this.status({ fill: 'yellow', shape: 'dot', text: 'sending…' })
 					await new Promise<void>((resolve, reject) => {
-						socket.write(payload, (error) => {
+						const commands = Buffer.concat([
+							payload,
+							...(cutAfter
+								? [
+										Buffer.from([0x0a, 0x0a, 0x0a, 0x0a, 0x0a]), // New lines
+										Buffer.from([0x1b, 0x69]), // Cut
+								  ]
+								: []),
+						])
+						socket.write(commands, (error) => {
 							if (error) {
 								reject(error)
 							} else {
