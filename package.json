@@ -39,6 +39,7 @@
 		}
 	},
 	"dependencies": {
-		"iconv-lite": "^0.7.0"
+		"iconv-lite": "^0.7.0",
+		"skia-canvas": "^3.0.8"
 	}
 }

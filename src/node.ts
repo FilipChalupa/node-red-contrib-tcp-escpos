@@ -3,6 +3,7 @@ import * as NodeRED from 'node-red'
 import fs from 'node:fs/promises'
 import net from 'node:net'
 import { URL } from 'node:url'
+import { Canvas, loadImage } from 'skia-canvas'
 
 const connectTcp = (options: net.NetConnectOpts) =>
 	new Promise<net.Socket>((resolve, reject) => {
@@ -94,8 +95,65 @@ export = function (RED: NodeRED.NodeAPI) {
 								}
 								throw new Error('Invalid image payload.')
 							})()
-							// @TODO
-							throw new Error()
+							const image = await loadImage(imageBuffer)
+							// @TODO: scale down too wide images to fit the paper width
+							const canvas = new Canvas(image.width, image.height)
+							// @TODO: dither the image to black and white
+							const context = canvas.getContext('2d')
+							context.drawImage(image, 0, 0, canvas.width, canvas.height)
+							const payloadParts: Array<Buffer> = []
+							payloadParts.push(Buffer.from([0x1b, 0x40])) // Initialize printer
+							payloadParts.push(Buffer.from([0x1b, 0x61, 1])) // Center alignment
+							const splitImageByHeightInPixels = 1024 // Splitting image to more smaller ones because Epson printer can't handle one super heigh image
+							for (
+								let yOffset = 0;
+								yOffset < canvas.height;
+								yOffset += splitImageByHeightInPixels
+							) {
+								const { width, height, data } = context.getImageData(
+									0,
+									yOffset,
+									canvas.width,
+									Math.min(splitImageByHeightInPixels, canvas.height - yOffset),
+								)
+								// For xL, xH, yL, yH, see the documentation https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/gs_lv_0.html
+								const xL = (width % 2048) / 8
+								const xH = 0
+								const yL = height % 256
+								const yH = height / 256
+								const dark = 0xff
+								const light = 0x00
+								const pixels: Array<typeof light | typeof dark> = [
+									...new Array(width * height),
+								].map(() => light)
+								const paintDarkPixel = (index: number) => {
+									pixels[index] = dark
+								}
+								for (let index = 0; index < data.length; index += 4) {
+									const red = data[index]
+									// const green = data[index + 1]
+									// const blue = data[index + 2]
+									const alpha = data[index + 3]
+									// @TODO: maybe check green and blue too
+									if (red < 255 && alpha > 0) {
+										paintDarkPixel(index / 4)
+									}
+								}
+								const pixelsGroupedToBytes = Buffer.alloc(
+									Math.ceil(pixels.length / 8),
+								)
+								pixels.forEach((bitColor, index) => {
+									const columnByteIndex = Math.floor(index / 8)
+									pixelsGroupedToBytes[columnByteIndex] |=
+										bitColor & (0x01 << (7 - (index % 8)))
+								})
+
+								payloadParts.push(
+									Buffer.from([0x1d, 0x76, 0x30, 0, xL, xH, yL, yH]),
+								)
+								payloadParts.push(pixelsGroupedToBytes)
+							}
+							return Buffer.concat(payloadParts)
 						}
 						if (payloadType === 'buffer') {
 							if (Buffer.isBuffer(payload)) {
