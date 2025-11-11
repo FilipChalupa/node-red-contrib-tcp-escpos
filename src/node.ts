@@ -23,6 +23,7 @@ interface TcpEscposNodeConfiguration extends NodeRED.NodeDef {
 	host: string
 	payloadType: PayloadType
 	payload: string | Array<number>
+	cutAfter: boolean
 }
 
 export = function (RED: NodeRED.NodeAPI) {
@@ -44,14 +45,18 @@ export = function (RED: NodeRED.NodeAPI) {
 							allowedPayloadTypes.find((type) => type === message.type) ||
 							configuration.payloadType
 						const payload = message.payload || configuration.payload
+						const cutAfter = message.cutAfter ?? configuration.cutAfter
 						if (payloadType === 'text') {
 							const commands: Array<Buffer> = []
 							commands.push(Buffer.from([0x1b, 0x40])) // Initialize printer
 							commands.push(Buffer.from([0x1b, 0x74, 18])) // Language options: 18 is CP852 code table
 							commands.push(Buffer.from([0x1b, 0x61, 1])) // Center alignment
 							commands.push(encodeText(String(payload)))
-							commands.push(Buffer.from([0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a])) // New lines
-							commands.push(Buffer.from([0x1b, 0x69])) // Cut
+							commands.push(Buffer.from([0x0a])) // New line
+							if (cutAfter) {
+								commands.push(Buffer.from([0x0a, 0x0a, 0x0a, 0x0a, 0x0a])) // New lines
+								commands.push(Buffer.from([0x1b, 0x69])) // Cut
+							}
 
 							return Buffer.concat(commands)
 						}

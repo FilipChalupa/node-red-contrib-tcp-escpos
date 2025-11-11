@@ -11,9 +11,25 @@
 			host: { value: '' },
 			payloadType: { value: 'text' },
 			payload: { value: "I'm Mr. Printer.\nLook at me!" },
+			cutAfter: { value: true },
 		},
 		label: function () {
 			return this.name || this.host || 'tcp escpos'
+		},
+		oneditprepare: function () {
+			const $type = $('#node-input-payloadType')
+			const $cut = $('#node-input-cutAfter').closest('.form-row')
+
+			function refresh() {
+				if ($type.val() === 'buffer') {
+					$cut.hide()
+				} else {
+					$cut.show()
+				}
+			}
+
+			$type.on('change', refresh)
+			refresh()
 		},
 	})
 </script>
@@ -41,6 +57,12 @@
 			><i class="fa fa-dot-circle-o"></i> Payload</label
 		>
 		<textarea id="node-input-payload"></textarea>
+	</div>
+	<div class="form-row">
+		<label for="node-input-cutAfter"
+			><i class="fa fa-dot-scissors"></i> Cut After</label
+		>
+		<input type="checkbox" id="node-input-cutAfter" />
 	</div>
 </script>
 <script type="text/html" data-help-name="tcp escpos">
