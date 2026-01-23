@@ -18,48 +18,6 @@ const encodeText = (text: string): Buffer => {
 	return iconv.encode(filtered, 'CP852')
 }
 
-const dither = (canvas: Canvas) => {
-	const context = canvas.getContext('2d')
-	if (!context) {
-		throw new Error('Context not available.')
-	}
-	const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-	const { data } = imageData
-	const dataLength = data.length
-	const w = canvas.width
-	const lumR: Array<number> = []
-	const lumG: Array<number> = []
-	const lumB: Array<number> = []
-
-	let newPixel: number
-	let err: number
-
-	for (let i = 0; i < 256; i++) {
-		lumR[i] = i * 0.299
-		lumG[i] = i * 0.587
-		lumB[i] = i * 0.11
-	}
-
-	// Greyscale luminance (sets r pixels to luminance of rgb)
-	for (let i = 0; i <= dataLength; i += 4) {
-		data[i] = Math.floor(lumR[data[i]] + lumG[data[i + 1]] + lumB[data[i + 2]])
-	}
-
-	for (let currentPixel = 0; currentPixel <= dataLength; currentPixel += 4) {
-		// threshold for determining current pixel's conversion to a black or white pixel
-		newPixel = data[currentPixel] < 150 ? 0 : 255
-		err = Math.floor((data[currentPixel] - newPixel) / 23)
-		data[currentPixel + 0 * 1 - 0] = newPixel
-		data[currentPixel + 4 * 1 - 0] += err * 7
-		data[currentPixel + 4 * w - 4] += err * 3
-		data[currentPixel + 4 * w - 0] += err * 5
-		data[currentPixel + 4 * w + 4] += err * 1
-		// Set g and b values equal to r (effectively greyscales the image fully)
-		data[currentPixel + 1] = data[currentPixel + 2] = data[currentPixel]
-	}
-	context.putImageData(imageData, 0, 0)
-}
-
 const allowedPayloadTypes = ['text', 'image', 'buffer'] as const
 type PayloadType = (typeof allowedPayloadTypes)[number]
 
@@ -140,7 +98,6 @@ export = function (RED: NodeRED.NodeAPI) {
 							const image = await loadImage(imageBuffer)
 							// @TODO: scale down too wide images to fit the paper width
 							const canvas = new Canvas(image.width, image.height)
-							dither(canvas)
 							const context = canvas.getContext('2d')
 							context.drawImage(image, 0, 0, canvas.width, canvas.height)
 							const payloadParts: Array<Buffer> = []
@@ -152,44 +109,37 @@ export = function (RED: NodeRED.NodeAPI) {
 								yOffset < canvas.height;
 								yOffset += splitImageByHeightInPixels
 							) {
-								const { width, height, data } = context.getImageData(
-									0,
-									yOffset,
-									canvas.width,
-									Math.min(splitImageByHeightInPixels, canvas.height - yOffset),
+								const chunkHeight = Math.min(
+									splitImageByHeightInPixels,
+									canvas.height - yOffset,
 								)
+								const {
+									width,
+									height,
+									data: imageData,
+								} = context.getImageData(0, yOffset, canvas.width, chunkHeight)
+								const bytes = (width + 7) >> 3
 								// For xL, xH, yL, yH, see the documentation https://download4.epson.biz/sec_pubs/pos/reference_en/escpos/gs_lv_0.html
-								const xL = (width % 2048) / 8
-								const xH = 0
-								const yL = height % 256
-								const yH = height / 256
-								const dark = 0xff
-								const light = 0x00
-								const pixels: Array<typeof light | typeof dark> = [
-									...new Array(width * height),
-								].map(() => light)
-								const paintDarkPixel = (index: number) => {
-									pixels[index] = dark
-								}
-								for (let index = 0; index < data.length; index += 4) {
-									const red = data[index]
-									// const green = data[index + 1]
-									// const blue = data[index + 2]
-									const alpha = data[index + 3]
-									// @TODO: maybe check green and blue too
-									if (red < 255 && alpha > 0) {
-										paintDarkPixel(index / 4)
+								const xL = bytes & 0xff
+								const xH = bytes >> 8
+								const yL = height & 0xff
+								const yH = height >> 8
+								const pixelsGroupedToBytes = Buffer.alloc(bytes * height)
+								for (let y = 0; y < height; y++) {
+									for (let x = 0; x < width; x++) {
+										const index = (y * width + x) * 4
+										const red = imageData[index]
+										const green = imageData[index + 1]
+										const blue = imageData[index + 2]
+										const alpha = imageData[index + 3]
+										const greyscale = red * 0.299 + green * 0.587 + blue * 0.114
+										if (alpha > 127 && greyscale < 128) {
+											const byteIndex = y * bytes + (x >> 3)
+											const bit = 1 << (7 - (x & 7))
+											pixelsGroupedToBytes[byteIndex] |= bit
+										}
 									}
 								}
-								const pixelsGroupedToBytes = Buffer.alloc(
-									Math.ceil(pixels.length / 8),
-								)
-								pixels.forEach((bitColor, index) => {
-									const columnByteIndex = Math.floor(index / 8)
-									pixelsGroupedToBytes[columnByteIndex] |=
-										bitColor & (0x01 << (7 - (index % 8)))
-								})
-
 								payloadParts.push(
 									Buffer.from([0x1d, 0x76, 0x30, 0, xL, xH, yL, yH]),
 								)
