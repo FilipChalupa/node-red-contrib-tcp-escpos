@@ -73,21 +73,51 @@
 	</div>
 </script>
 <script type="text/html" data-help-name="tcp escpos">
-	<p>Typescript example Node-RED node</p>
+	<p>Sends raw text, images, or buffers to an ESC/POS-compatible printer over TCP/IP.</p>
+
+	<h3>Configuration</h3>
+	<dl class="message-properties">
+		<dt>Host</dt>
+		<dd>The IP address and port of the printer (e.g., <code>192.168.1.101:9100</code>). If the port is omitted, it defaults to <code>9100</code>.</dd>
+		<dt>Dots per line</dt>
+		<dd>The maximum width of the paper in dots. This is used to scale down images that are too wide. The default is <code>576</code>.</dd>
+		<dt>Type</dt>
+		<dd>The type of data to send to the printer. This can be <code>Text</code>, <code>Image</code>, or <code>Buffer</code>.</dd>
+		<dt>Payload</dt>
+		<dd>The content to send to the printer. The format depends on the selected <code>Type</code>.</dd>
+		<dt>Cut After</dt>
+		<dd>If checked, the printer will cut the paper after the payload has been printed.</dd>
+	</dl>
+
+	<h3>Payload Types</h3>
+	<dl class="message-properties">
+		<dt>Text</dt>
+		<dd>The payload should be a string of text. The node will automatically center the text and add a newline character at the end.</dd>
+		<dt>Image</dt>
+		<dd>
+			The payload can be one of the following:
+			<ul>
+				<li>A Buffer containing the image data.</li>
+				<li>A base64 encoded string.</li>
+				<li>A data URL (e.g., <code>data:image/png;base64,...</code>).</li>
+				<li>A URL (<code>http</code>, <code>https</code>, or <code>file</code>).</li>
+				<li>A file path.</li>
+			</ul>
+			The image will be dithered and converted to monochrome before printing. If the image is wider than the <code>Dots per line</code> setting, it will be scaled down to fit.
+		</dd>
+		<dt>Buffer</dt>
+		<dd>The payload can be a Buffer or an array of bytes. This allows you to send raw ESC/POS commands to the printer.</dd>
+	</dl>
+
 	<h3>Inputs</h3>
 	<dl class="message-properties">
-		<dt>
-			payload
-			<span class="property-type">boolean</span>
-		</dt>
-		<h3>Outputs</h3>
-		<dl class="message-properties">
-			<dt>
-				payload
-				<span class="property-type">object</span>
-			</dt>
-			<h3>Details</h3>
-			<p>Some more information about the node.</p>
-		</dl>
+		<dt>payload</dt>
+		<dd>The payload to be sent to the printer. This will override the <code>Payload</code> setting in the node's configuration.</dd>
+		<dt>host</dt>
+		<dd>The host to connect to. This will override the <code>Host</code> setting in the node's configuration.</dd>
+		<dt>dotsPerLine</dt>
+		<dd>The dots per line to use. This will override the <code>Dots per line</code> setting in the node's configuration.</dd>
+		<dt>cutAfter</dt>
+		<dd>Whether to cut the paper after printing. This will override the <code>Cut After</code> setting in the node's configuration.</dd>
 	</dl>
 </script>
