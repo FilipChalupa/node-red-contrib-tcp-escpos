@@ -25,6 +25,7 @@ type PayloadType = (typeof allowedPayloadTypes)[number]
 interface TcpEscposNodeConfiguration extends NodeRED.NodeDef {
 	host: string
 	payloadType: PayloadType
+	dotsPerLine: number
 	payload: string | Array<number>
 	cutAfter: boolean
 }
@@ -44,6 +45,7 @@ export = function (RED: NodeRED.NodeAPI) {
 			const error = await (async () => {
 				try {
 					const cutAfter = message.cutAfter ?? configuration.cutAfter
+					const dotsPerLine = message.dotsPerLine ?? configuration.dotsPerLine
 					const payload = await (async () => {
 						const payloadType =
 							allowedPayloadTypes.find((type) => type === message.type) ||
@@ -97,7 +99,7 @@ export = function (RED: NodeRED.NodeAPI) {
 								throw new Error('Invalid image payload.')
 							})()
 							const image = await loadImage(imageBuffer)
-							// @TODO: scale down too wide images to fit the paper width
+							// @TODO: scale down too wide images to fit the paper width - respect dotsPerLine
 							const canvas = new Canvas(image.width, image.height)
 							const context = canvas.getContext('2d')
 							context.drawImage(image, 0, 0, canvas.width, canvas.height)
