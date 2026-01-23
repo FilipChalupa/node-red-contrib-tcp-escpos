@@ -99,10 +99,18 @@ export = function (RED: NodeRED.NodeAPI) {
 								throw new Error('Invalid image payload.')
 							})()
 							const image = await loadImage(imageBuffer)
-							// @TODO: scale down too wide images to fit the paper width - respect dotsPerLine
-							const canvas = new Canvas(image.width, image.height)
+							let imageWidth = image.width
+							let imageHeight = image.height
+
+							if (imageWidth > dotsPerLine) {
+								const aspectRatio = image.height / image.width
+								imageWidth = dotsPerLine
+								imageHeight = imageWidth * aspectRatio
+							}
+
+							const canvas = new Canvas(imageWidth, imageHeight)
 							const context = canvas.getContext('2d')
-							context.drawImage(image, 0, 0, canvas.width, canvas.height)
+							context.drawImage(image, 0, 0, imageWidth, imageHeight)
 							dither(canvas)
 							const payloadParts: Array<Buffer> = []
 							payloadParts.push(Buffer.from([0x1b, 0x40])) // Initialize printer
