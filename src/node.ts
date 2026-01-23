@@ -140,8 +140,7 @@ export = function (RED: NodeRED.NodeAPI) {
 							const image = await loadImage(imageBuffer)
 							// @TODO: scale down too wide images to fit the paper width
 							const canvas = new Canvas(image.width, image.height)
-							// @TODO: dither the image to black and white
-							// dither(canvas)
+							dither(canvas)
 							const context = canvas.getContext('2d')
 							context.drawImage(image, 0, 0, canvas.width, canvas.height)
 							const payloadParts: Array<Buffer> = []
@@ -228,7 +227,7 @@ export = function (RED: NodeRED.NodeAPI) {
 								? [
 										Buffer.from([0x0a, 0x0a, 0x0a, 0x0a, 0x0a]), // New lines
 										Buffer.from([0x1b, 0x69]), // Cut
-								  ]
+									]
 								: []),
 						])
 						socket.write(commands, (error) => {
