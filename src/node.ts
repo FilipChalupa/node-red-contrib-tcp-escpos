@@ -1,17 +1,11 @@
 import { getQueueGroup } from 'enqueue-task'
-import iconv from 'iconv-lite'
 import * as NodeRED from 'node-red'
 import fs from 'node:fs/promises'
 import { URL } from 'node:url'
 import { Canvas, loadImage } from 'skia-canvas'
 import { dither } from './utilities/dither'
+import { encodeText } from './utilities/encodeText'
 import { socketWrite } from './utilities/socketWrite'
-
-const encodeText = (text: string): Buffer => {
-	// Remove all characters that are not letters, numbers, punctuation or whitespace printers cannot handle emojis
-	const filtered = text.replaceAll(/[^\p{L}\p{N}\p{P}\p{Z}\n\r×]+/gu, '')
-	return iconv.encode(filtered, 'CP852')
-}
 
 const allowedPayloadTypes = ['text', 'image', 'buffer'] as const
 type PayloadType = (typeof allowedPayloadTypes)[number]
