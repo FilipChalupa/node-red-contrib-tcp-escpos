@@ -2,17 +2,10 @@ import { getQueueGroup } from 'enqueue-task'
 import iconv from 'iconv-lite'
 import * as NodeRED from 'node-red'
 import fs from 'node:fs/promises'
-import net from 'node:net'
 import { URL } from 'node:url'
 import { Canvas, loadImage } from 'skia-canvas'
 import { dither } from './utilities/dither'
-
-const connectTcp = (options: net.NetConnectOpts) =>
-	new Promise<net.Socket>((resolve, reject) => {
-		const socket = net.createConnection(options)
-		socket.once('connect', () => resolve(socket))
-		socket.once('error', (error) => reject(error))
-	})
+import { socketWrite } from './utilities/socketWrite'
 
 const encodeText = (text: string): Buffer => {
 	// Remove all characters that are not letters, numbers, punctuation or whitespace printers cannot handle emojis
@@ -58,6 +51,7 @@ export = function (RED: NodeRED.NodeAPI) {
 
 			const error = await getQueueGroup(host).enqueueTask(async () => {
 				console.log(id, 'Started')
+				this.status({ fill: 'yellow', shape: 'dot', text: 'processing…' })
 				const error = await (async () => {
 					try {
 						if (!host) {
@@ -198,34 +192,19 @@ export = function (RED: NodeRED.NodeAPI) {
 							}
 							return payloadType satisfies never
 						})()
-						this.status({ fill: 'yellow', shape: 'dot', text: 'connecting…' })
 
-						const socket = await connectTcp({ host, port })
-
+						const commands = Buffer.concat([
+							payload,
+							...(cutAfter
+								? [
+										Buffer.from([0x0a, 0x0a, 0x0a, 0x0a, 0x0a]), // New lines
+										Buffer.from([0x1b, 0x69]), // Cut
+									]
+								: []),
+						])
+						console.log('Sending to printer', message)
 						this.status({ fill: 'yellow', shape: 'dot', text: 'sending…' })
-						await new Promise<void>((resolve, reject) => {
-							const commands = Buffer.concat([
-								payload,
-								...(cutAfter
-									? [
-											Buffer.from([0x0a, 0x0a, 0x0a, 0x0a, 0x0a]), // New lines
-											Buffer.from([0x1b, 0x69]), // Cut
-										]
-									: []),
-							])
-							console.log('Sending to printer', message)
-							socket.write(commands, (error) => {
-								if (error) {
-									reject(error)
-								} else {
-									resolve()
-								}
-							})
-						})
-						await new Promise<void>((resolve) => {
-							socket.end(resolve)
-						})
-						await new Promise((resolve) => setTimeout(resolve, 200)) // Wait a bit so the printer can clean buffer a to make sure next immediate print task comes in right order.
+						await socketWrite(host, port, commands)
 					} catch (error) {
 						if (error instanceof Error) {
 							return error
