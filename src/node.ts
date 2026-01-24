@@ -24,8 +24,6 @@ interface TcpEscposNodeConfiguration extends NodeRED.NodeDef {
 	cutAfter: boolean
 }
 
-let lastMessageId = 0
-
 export = function (RED: NodeRED.NodeAPI) {
 	function TcpEscposNode(
 		this: NodeRED.Node,
@@ -38,7 +36,6 @@ export = function (RED: NodeRED.NodeAPI) {
 		})
 
 		this.on('input', async (message: any, _send, done) => {
-			const id = ++lastMessageId
 			const { host, port } = (() => {
 				const hostname: string | null =
 					message.host || configuration.host || null
@@ -47,10 +44,8 @@ export = function (RED: NodeRED.NodeAPI) {
 				const port = Number(url.port) || 9100
 				return { host: hostname ? host : null, port }
 			})()
-			console.log(id, 'New message for', host)
 
 			const error = await getQueueGroup(host).enqueueTask(async () => {
-				console.log(id, 'Started')
 				this.status({ fill: 'yellow', shape: 'dot', text: 'processing…' })
 				const error = await (async () => {
 					try {
@@ -202,7 +197,6 @@ export = function (RED: NodeRED.NodeAPI) {
 									]
 								: []),
 						])
-						console.log('Sending to printer', message)
 						this.status({ fill: 'yellow', shape: 'dot', text: 'sending…' })
 						await socketWrite(host, port, commands)
 					} catch (error) {
@@ -219,11 +213,9 @@ export = function (RED: NodeRED.NodeAPI) {
 				} else {
 					this.status({ fill: 'green', shape: 'dot', text: 'sent' })
 				}
-				console.log(id, 'Queue released')
 				return error
 			})
 
-			console.log(id, 'Done')
 			done?.(error)
 		})
 	}
