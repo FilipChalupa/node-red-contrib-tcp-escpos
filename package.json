@@ -1,6 +1,6 @@
 {
 	"name": "node-red-contrib-tcp-escpos",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Escpos over TCP/IP node for Node-RED",
 	"devDependencies": {
 		"@types/node": "^18.14.0",
