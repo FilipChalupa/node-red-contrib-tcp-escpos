@@ -27,7 +27,7 @@ export const socketWrite = async (
 	const key = `${host}:${port}`
 	let socket = sockets.get(key)
 
-	if (socket?.destroyed) {
+	if (socket?.destroyed || socket?.writableEnded) {
 		socket = undefined
 		sockets.delete(key)
 	}
